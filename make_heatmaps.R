@@ -1,11 +1,20 @@
+#######
+## Script to make a heatmap out of a correlation matrix
+## input
+##      baseDir: Analysis directory, e.g, contains 'data', 'plots', 'src', etc
+##      dataMat: Matrix of input data to generate correlation matrix
+## output
+##	Heatmap plots and correlation matrices saved as Rd files
+## G Moyerbrailean, Wayne State University
+#######
 
-dataDir="/wsu/home/groups/piquelab/charvey/GxE/differential_expression/DEseq2_results/"
 baseDir="/nfs/rprscratch/gmb/GxE/differential_expression/DEseq2/analysis/"
+dataMat="lfcTable.clean.Rd"
 cargs<-commandArgs(trail=TRUE);
 if(length(cargs)>=1)
-dataDir<-cargs[1];
+baseDir<-cargs[1];
 if(length(cargs)>=2)
-baseDir<-cargs[2];
+dataMat<-cargs[2];
 
 library(gplots)
 
@@ -51,7 +60,7 @@ gen_labels <- function(names) {
 
 #### Start
 ## Read in the data matrix
-load(paste0(baseDir, '/data/lfcTable.clean.Rd')) # object is "lfcTable.clean"
+load(paste0(baseDir, '/data/', dataMat)) # in this case object is "lfcTable.clean"
 
 ## Make a summary table for each treatment with >= 1 deep sequence run
 ind <- grep('DP', colnames(lfcTable.clean))
