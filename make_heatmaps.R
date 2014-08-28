@@ -37,11 +37,12 @@ makeCorrMatrix <- function(mtx){
 
 ## Generate the lookup tables
 ## TODO - get/lookup plate #'s, don't hard-code
+plateLst <- c(1,2,4,5,6,7,8,9,11,12)
+cellTypeLst <- c("LCL", "PBMC", "HUVEC", "PBMC", "PBMC",  "LCL", "HUVEC", "SMC", "Mel", "Mel")
 txTable <- read.table('etc/txID_to_name.txt', as.is=T, header=T, sep='\t')
 rownames(txTable) <- txTable$Treatment_ID
-plateTable <- data.frame(plateID=c(paste0("P", c(1,2,4,5,7,8,11,12)), 
-	paste0("DP", c(1,2,4,5,7,8,11,12))), cellType=rep(c("LCL", "PBMC", "HUVEC", 
-		"PBMC", "LCL", "HUVEC", "Mel", "Mel"),2))
+plateTable <- data.frame(plateID=c(paste0("P", plateLst), 
+	paste0("DP", plateLst)), cellType=rep(cellTypeLst, 2))
 rownames(plateTable) <- plateTable$plateID
 
 ## Use lookup tables to convert ID-based labels into readable labels
@@ -65,6 +66,7 @@ load(paste0(baseDir, '/data/', dataMat)) # in this case object is "lfcTable.clea
 ## Make a summary table for each treatment with >= 1 deep sequence run
 ind <- grep('DP', colnames(lfcTable.clean))
 cols <- c(colnames(lfcTable.clean)[ind], gsub('DP', 'P', colnames(lfcTable.clean)[ind]))
+cols <- cols %in% colnames(lfcTable.clean)
 mat <- lfcTable.clean[,cols]
 summaryMtx <- makeCorrMatrix(mat)
 labs <- gen_labels(colnames(summaryMtx))
@@ -72,9 +74,34 @@ colnames(summaryMtx) <- rownames(summaryMtx) <- labs
 save(summaryMtx, file=paste0(baseDir, '/data/corr.matrix.Rd'), compress=T)
 
 system(paste0('mkdir -p ', baseDir, '/plots/heatmaps/'))
-pdf(paste0(baseDir, '/plots/heatmaps/all.heatmap.pdf'), height=10, width=10)
-heatmap.2(summaryMtx, trace="none", cexCol=0.8, cexRow=0.8, margins=c(10,10), 
-	main="All treatments w/ >= 1 deep sequencing run")
+pdf(paste0(baseDir, '/plots/heatmaps/all.heatmap.2.pdf'), height=10, width=10)
+
+## Color the columns by treatment and the rows by cell type
+plate <- factor(sapply(strsplit(names(colnames(summaryMtx)),"_"),function(x){x[1]}))
+treatment <- factor(sapply(strsplit(names(colnames(summaryMtx)),"_"),function(x){x[2]}))
+cellType <- factor(plateTable[plate,]$cellType)
+cc <- rainbow(length(levels(treatment)),start=0,end=1.0)
+rc <- terrain.colors(length(levels(cellType)))
+
+heatmap.2(summaryMtx, trace="none", cexCol=0.2, cexRow=0.2, margins=c(10,10), 
+	main="All treatments", ColSideColors=cc[treatment], 
+	RowSideColors=rc[cellType])
+dev.off()
+
+pdf(paste0(baseDir, '/plots/heatmaps/all.heatmap.legend.pdf'), height=13, width=10)
+plot.new()
+legend("topleft",      # location of the legend on the heatmap plot
+    legend = levels(cellType), # category labels
+    col = rc,  # color key
+    lty= 1,             # line style
+    lwd = 10            # line width
+)
+legend("topright",      # location of the legend on the heatmap plot
+    legend = txTable[levels(treatment),]$Treatment_Name, # category labels
+    col = cc,  # color key
+    lty= 1,             # line style
+    lwd = 10            # line width
+)
 dev.off()
 
 
@@ -87,10 +114,35 @@ colnames(deepMtx) <- rownames(deepMtx) <- labs
 save(deepMtx, file=paste0(baseDir, '/data/corr.matrix.deep.Rd'), compress=T)
 
 system(paste0('mkdir -p ', baseDir, '/plots/heatmaps/'))
-pdf(paste0(baseDir, '/plots/heatmaps/deep.heatmap.pdf'), height=10, width=10)
+
+plate <- factor(sapply(strsplit(names(colnames(deepMtx)),"_"),function(x){x[1]}))
+treatment <- factor(sapply(strsplit(names(colnames(deepMtx)),"_"),function(x){x[2]}))
+cellType <- factor(plateTable[plate,]$cellType)
+cc <- rainbow(length(levels(treatment)),start=0,end=1.0)
+rc <- terrain.colors(length(levels(cellType)))
+
+pdf(paste0(baseDir, '/plots/heatmaps/deep.heatmap.2.pdf'), height=10, width=10)
 heatmap.2(deepMtx, trace="none", cexCol=1, cexRow=1, margins=c(11,11), 
-	main="All deep sequencing")
+	main="All deep sequencing", ColSideColors=cc[treatment], 
+	RowSideColors=rc[cellType])
 dev.off()
+
+pdf(paste0(baseDir, '/plots/heatmaps/deep.heatmap.legend.pdf'), height=13, width=10)
+plot.new()
+legend("topleft",      # location of the legend on the heatmap plot
+    legend = levels(cellType), # category labels
+    col = rc,  # color key
+    lty= 1,             # line style
+    lwd = 10            # line width
+)
+legend("topright",      # location of the legend on the heatmap plot
+    legend = txTable[levels(treatment),]$Treatment_Name, # category labels
+    col = cc,  # color key
+    lty= 1,             # line style
+    lwd = 10            # line width
+)
+dev.off()
+
 
 
 ## Make a summary for all the shallow plates
@@ -102,7 +154,31 @@ colnames(shallowMtx) <- rownames(shallowMtx) <- labs
 save(shallowMtx, file=paste0(baseDir, '/data/corr.matrix.shallow.Rd'), compress=T)
 
 system(paste0('mkdir -p ', baseDir, '/plots/heatmaps/'))
-pdf(paste0(baseDir, '/plots/heatmaps/shallow.heatmap.pdf'), height=10, width=10)
-heatmap.2(shallowMtx, trace="none", cexCol=0.5, cexRow=0.5, margins=c(10,10), 
-	main="All shallow sequencing")
+pdf(paste0(baseDir, '/plots/heatmaps/shallow.heatmap.2.pdf'), height=10, width=10)
+
+plate <- factor(sapply(strsplit(names(colnames(shallowMtx)),"_"),function(x){x[1]}))
+treatment <- factor(sapply(strsplit(names(colnames(shallowMtx)),"_"),function(x){x[2]}))
+cellType <- factor(plateTable[plate,]$cellType)
+cc <- rainbow(length(levels(treatment)),start=0,end=1.0)
+rc <- terrain.colors(length(levels(cellType)))
+
+heatmap.2(shallowMtx, trace="none", cexCol=0.3, cexRow=0.3, margins=c(10,10), 
+	main="All shallow sequencing", ColSideColors=cc[treatment], 
+	RowSideColors=rc[cellType])
+dev.off()
+
+pdf(paste0(baseDir, '/plots/heatmaps/shallow.heatmap.legend.pdf'), height=13, width=10)
+plot.new()
+legend("topleft",      # location of the legend on the heatmap plot
+    legend = levels(cellType), # category labels
+    col = rc,  # color key
+    lty= 1,             # line style
+    lwd = 10            # line width
+)
+legend("topright",      # location of the legend on the heatmap plot
+    legend = txTable[levels(treatment),]$Treatment_Name, # category labels
+    col = cc,  # color key
+    lty= 1,             # line style
+    lwd = 10            # line width
+)
 dev.off()
