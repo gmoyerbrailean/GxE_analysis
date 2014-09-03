@@ -63,6 +63,7 @@ gen_labels <- function(names) {
 ## Read in the data matrix
 load(paste0(baseDir, '/data/', dataMat)) # in this case object is "lfcTable.clean"
 
+
 ## Make a summary table for each treatment with >= 1 deep sequence run
 ind <- grep('DP', colnames(lfcTable.clean))
 cols <- c(colnames(lfcTable.clean)[ind], gsub('DP', 'P', colnames(lfcTable.clean)[ind]))
@@ -77,7 +78,7 @@ system(paste0('mkdir -p ', baseDir, '/plots/heatmaps/'))
 pdf(paste0(baseDir, '/plots/heatmaps/all.heatmap.2.pdf'), height=10, width=10)
 
 ## Color the columns by treatment and the rows by cell type
-plate <- factor(sapply(strsplit(names(colnames(summaryMtx)),"_"),function(x){x[1]}))
+plate <- sapply(strsplit(names(colnames(summaryMtx)),"_"),function(x){x[1]})
 treatment <- factor(sapply(strsplit(names(colnames(summaryMtx)),"_"),function(x){x[2]}))
 cellType <- factor(plateTable[plate,]$cellType)
 cc <- rainbow(length(levels(treatment)),start=0,end=1.0)
@@ -115,14 +116,14 @@ save(deepMtx, file=paste0(baseDir, '/data/corr.matrix.deep.Rd'), compress=T)
 
 system(paste0('mkdir -p ', baseDir, '/plots/heatmaps/'))
 
-plate <- factor(sapply(strsplit(names(colnames(deepMtx)),"_"),function(x){x[1]}))
+plate <- sapply(strsplit(names(colnames(deepMtx)),"_"),function(x){x[1]})
 treatment <- factor(sapply(strsplit(names(colnames(deepMtx)),"_"),function(x){x[2]}))
 cellType <- factor(plateTable[plate,]$cellType)
 cc <- rainbow(length(levels(treatment)),start=0,end=1.0)
 rc <- terrain.colors(length(levels(cellType)))
 
 pdf(paste0(baseDir, '/plots/heatmaps/deep.heatmap.2.pdf'), height=10, width=10)
-heatmap.2(deepMtx, trace="none", cexCol=1, cexRow=1, margins=c(11,11), 
+heatmap.2(deepMtx,  trace="none", cexCol=1, cexRow=1, margins=c(11,11), 
 	main="All deep sequencing", ColSideColors=cc[treatment], 
 	RowSideColors=rc[cellType])
 dev.off()
@@ -144,7 +145,6 @@ legend("topright",      # location of the legend on the heatmap plot
 dev.off()
 
 
-
 ## Make a summary for all the shallow plates
 ind <- grep('DP', colnames(lfcTable.clean))
 mat <- lfcTable.clean[,-ind]
@@ -156,7 +156,7 @@ save(shallowMtx, file=paste0(baseDir, '/data/corr.matrix.shallow.Rd'), compress=
 system(paste0('mkdir -p ', baseDir, '/plots/heatmaps/'))
 pdf(paste0(baseDir, '/plots/heatmaps/shallow.heatmap.2.pdf'), height=10, width=10)
 
-plate <- factor(sapply(strsplit(names(colnames(shallowMtx)),"_"),function(x){x[1]}))
+plate <- sapply(strsplit(names(colnames(shallowMtx)),"_"),function(x){x[1]})
 treatment <- factor(sapply(strsplit(names(colnames(shallowMtx)),"_"),function(x){x[2]}))
 cellType <- factor(plateTable[plate,]$cellType)
 cc <- rainbow(length(levels(treatment)),start=0,end=1.0)
