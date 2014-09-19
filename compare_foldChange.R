@@ -57,7 +57,9 @@ ParallelSapply(deepFiles, function(dFile){
 	shal <- shal[shal$t.id %in% both,]
 	deep <- deep[deep$t.id %in% both,]
 
-	## sanity check - ensure sorted
+	## sanity check - ensure sorted/matching
+	shal <- shal[order(shal$t.id),]
+	deep <- deep[order(deep$t.id),]
 	stopifnot(shal$t.id == deep$t.id)
 
 	## Combine and format the data for easy plotting
