@@ -11,7 +11,7 @@ require(parallel)
 
 cargs<-commandArgs(trail=TRUE);
 if(length(cargs)>=1)
-plate<-cargs[1];
+platePrefix<-cargs[1];
 if(length(cargs)>=2)
 fdrThresh<-cargs[2]
 if(length(cargs)>=3)
@@ -28,25 +28,26 @@ ParallelSapply <- function(...,mc.cores=cores){
 }
 
 ## Get treatment IDs and treatment names
-txTable <- read.table('etc/txID_to_name.txt', as.is=T, header=T, sep='\t')
-rownames(txTable) <- txTable$Treatment_ID
+# txTable <- read.table('etc/txID_to_name.txt', as.is=T, header=T, sep='\t')
+# rownames(txTable) <- txTable$Treatment_ID
+source('/nfs/rprscratch/gmb/GxE/differential_expression/DEseq2/analysis/src/load_cv_tables.R')
 
 # Data Structure - 
 # plots/
 #	plate/
 #		Tx1.pdf
 #		Tx2.pdf
-system(paste0('mkdir -p plots/fold_change/', plate))
+# system(paste0('mkdir -p plots/fold_change/', plate))
 
 ## Get the fold change data for treatments sequenced twice
-deepFiles = list.files(paste0(baseDir, "out_data_D", plate, "/stats/"))
+deepFiles = list.files(paste0(baseDir, "out_data_D", platePrefix, "/stats/"))
 ParallelSapply(deepFiles, function(dFile){
 
 	txID = gsub('.txt', '', gsub('.*_', '', dFile))
 	sFile=gsub('DP', 'P', dFile)
-	cmd = paste0("less ", baseDir, "out_data_", plate, "/stats/", sFile)
+	cmd = paste0("less ", baseDir, "out_data_", platePrefix, "/stats/", sFile)
 	shal <- read.table(pipe(cmd), as.is=T, sep=' ', header=T)
-	cmd = paste0("less ", baseDir, "out_data_D", plate, "/stats/", dFile)
+	cmd = paste0("less ", baseDir, "out_data_D", platePrefix, "/stats/", dFile)
 	deep <- read.table(pipe(cmd), as.is=T, sep=' ', header=T)
 	names(shal) <- c("t.id", "qv", "pval", "logFC", "ensg", "g.id")
 	names(deep) <- names(shal)
@@ -76,9 +77,10 @@ ParallelSapply(deepFiles, function(dFile){
 	dat$sig[dat$sQ<fdrThresh & dat$dQ<fdrThresh] <- "Both"
 
 	## Plot!
-	png(paste0('plots/fold_change/', plate, '_', txID, '.png'))
+	# png(paste0('plots/fold_change/', platePrefix, '_', txID, '.png'))
+	pdf(paste0('plots/fold_change/', platePrefix, '_', txID, '.pdf'))
 	plot(dat$sFC, dat$dFC, pch=20, col="black", xlab="logFC - Shallow", ylab="logFC - Deep",
-		main=paste0("Plates ", plate, "/D", plate, ": ", txTable[txID,]$Short_Name, 
+		main=paste0("Plates ", platePrefix, "/D", platePrefix, ": ", treatmentKey[txID,]$Short_Name, 
 		 	    " (", fdrThresh*100, "% FDR)"))
 	points(dat$sFC[dat$sig=='Deep'], dat$dFC[dat$sig=='Deep'], col='red', pch=20)
 	points(dat$sFC[dat$sig=='Shallow'], dat$dFC[dat$sig=='Shallow'], col='blue', pch=20)
@@ -94,13 +96,13 @@ ParallelSapply(deepFiles, function(dFile){
 	abline(h=0, lty=3)
 	dev.off()
 
-	# Try with just the significantly DE transcripts
-	dat2 <- dat[dat$sig != "All",]
-	p1 <- ggplot(dat2, aes(x=sFC, y=dFC)) 
-	p1 + 
-		geom_point(alpha=0.75, aes(color=sig)) +
-		scale_colour_manual(values = c("purple", "red", "blue")) +
-		xlab("logFC - Shallow") +
-		ylab("logFC - Deep")
-	ggsave(paste0('plots/fold_change/', plate, '_', txID, '_sig.png'))
+	# # Try with just the significantly DE transcripts
+	# dat2 <- dat[dat$sig != "All",]
+	# p1 <- ggplot(dat2, aes(x=sFC, y=dFC)) 
+	# p1 + 
+	# 	geom_point(alpha=0.75, aes(color=sig)) +
+	# 	scale_colour_manual(values = c("purple", "red", "blue")) +
+	# 	xlab("logFC - Shallow") +
+	# 	ylab("logFC - Deep")
+	# ggsave(paste0('plots/fold_change/', platePrefix, '_', txID, '_sig.png'))
 })
