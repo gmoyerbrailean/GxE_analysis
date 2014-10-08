@@ -19,7 +19,7 @@ dataMat<-cargs[2];
 library(gplots)
 
 ## Make a column-wise correlation matrix given an input matrix
-makeCorrMatrix <- function(mtx){
+makeCorrMatrix <- function(mat){
 	if (class(mat)=="matrix") {
 		goodRows <- !is.na(rowSums(mat))
 		mat.clean <- mat[goodRows,]
